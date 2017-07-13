@@ -1,44 +1,71 @@
 package com.logistikgo.imorales.testapi;
 
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.JsonReader;
-import android.view.View;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import javax.net.ssl.HttpsURLConnection;
+import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
+
+    EditText etResponse;
+    TextView tvIsConnected;
+    EditText editUsuario;
+    EditText editContrasena;
+    String strUsuario;
+    String strContrasena;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-//jajayyy
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        String test = "";
+
+        etResponse = (EditText) findViewById(R.id.etResponse);
+        tvIsConnected = (TextView) findViewById(R.id.tvIsConnected);
+        editUsuario = (EditText) findViewById(R.id.editUsuario);
+        editContrasena = (EditText) findViewById(R.id.editContrasena);
+
+//        if(isConnected()){
+//            tvIsConnected.setBackgroundColor(0xFF00CC00);
+//            tvIsConnected.setText("You are conncted");
+//        }
+//        else{
+//            //tvIsConnected.setText("You are NOT conncted");
+//        }
+
+        // show response on the EditText etResponse
+//        try {
+//                String strURL = "http://api.logistikgo.com/api/Usuarios/ValidarUsuario";
+//                test = GetResponse(strURL);
+//                etResponse.setText(test);
+//            } catch (ExecutionException e) {
+//                e.printStackTrace();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//        }
     }
 
     @Override
@@ -63,62 +90,189 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void OnClickAPI(View view){
-        Toast.makeText(this, "TEST", Toast.LENGTH_SHORT).show();
-        final TextView textView = (TextView) findViewById(R.id.textView);
+    public class HttpGetRequest extends AsyncTask<String, Void, String> {
 
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                String strURL = "https://api.github.com/";
-                String strFinalResponse = ".";
-                String key;
-                String value;
-                String newText;
+        public static final String REQUEST_METHOD = "POST";
+        public static final int READ_TIMEOUT = 150000;
+        public static final int CONNECTION_TIMEOUT = 150000;
 
-                URL githubEndpoint = null;
+        @Override
+        protected void onPreExecute() {
+        }
 
-                try {
-                    githubEndpoint = new URL(strURL);
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
+        @Override
+        protected String doInBackground(String... strings) {
+            String stringUrl = strings[0];
+            String result = null;
+            String inputLine;
 
-                HttpsURLConnection myConnection;
+            try {
 
-                try {
-                    myConnection = (HttpsURLConnection)githubEndpoint.openConnection();
-                    myConnection.setRequestProperty("User-Agent", "my-rest-app-v0.1");
+                result = GetHttpResponse(stringUrl,REQUEST_METHOD,READ_TIMEOUT,CONNECTION_TIMEOUT);
 
-                    myConnection.setRequestProperty("Accept", "application/vnd.github.v3+json");
-                    myConnection.setRequestProperty("Contact-Me", "hathibelagal@example.com");
-
-                    if (myConnection.getResponseCode() == 200) {
-                        InputStream responseBody = myConnection.getInputStream();
-                        InputStreamReader responseBodyReader = new InputStreamReader(responseBody, "UTF-8");
-
-                        JsonReader jsonReader = new JsonReader(responseBodyReader);
-
-                        jsonReader.beginObject(); // Start processing the JSON object
-                        while (jsonReader.hasNext()) { // Loop through all keys
-                            key = jsonReader.nextName(); // Fetch the next key
-                            value = jsonReader.nextString();
-                            newText = key + " : "+ value;
-
-                            strFinalResponse = strFinalResponse + newText;
-
-                            jsonReader.skipValue(); // Skip values of other keys
-                        }
-                        textView.setText( strFinalResponse );
-
-                        jsonReader.close();
-                        myConnection.disconnect();
-
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        });
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+        }
+    }
+
+    public  String GetHttpResponse(String strURL, String strRequest_method, int read_timeout, int connection_timeout)  {
+        String strRes = null;
+        String inputLine;
+
+        try {
+            URL urlCurrent = new URL(strURL);
+            HttpURLConnection connection =(HttpURLConnection)urlCurrent.openConnection();
+
+            JSONObject jdata=new JSONObject();
+            jdata.put("strUsuario",strUsuario);
+            jdata.put("strContrasena", strContrasena);
+
+            //Create a URL object holding our url
+            //Create a connection
+            connection.setRequestMethod(strRequest_method);
+            connection.setReadTimeout(read_timeout);
+            connection.setConnectTimeout(connection_timeout);
+
+            connection.setDoOutput(true);
+            connection.setDoInput(true);
+            //connection.setRequestProperty("User-Agent", "Fiddler");
+            //connection.setRequestProperty("Host", "localhost:63510");
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+
+            //Connect to our url
+            connection.connect();
+
+            OutputStream os = connection.getOutputStream();
+            os.write(jdata.toString().getBytes("UTF-8"));
+            os.close();
+
+            int HttpResult = connection.getResponseCode();
+
+            if(HttpResult == HttpURLConnection.HTTP_OK){
+                InputStreamReader streamReader = new InputStreamReader(connection.getInputStream());
+                //Create a new buffered reader and String Builder
+                BufferedReader reader = new BufferedReader(streamReader);
+                StringBuilder stringBuilder = new StringBuilder();
+                //Check if the line we are reading is not null
+                while((inputLine = reader.readLine()) != null){
+                    stringBuilder.append(inputLine);
+                }
+                //Close our InputStream and Buffered reader
+                reader.close();
+                streamReader.close();
+                //Set our result equal to our stringBuilder
+                strRes = stringBuilder.toString();
+            }
+            else{
+                String strResponse = connection.getResponseMessage();
+
+                InputStreamReader streamError = new InputStreamReader(connection.getErrorStream());
+
+                JsonReader jsonReader = new JsonReader(streamError);
+
+//                BufferedReader reader = new BufferedReader(streamError);
+
+                StringBuilder stringBuilder = new StringBuilder();
+
+//                while((inputLine = reader.readLine()) != null){
+//                    stringBuilder.append(inputLine);
+//                }
+
+//                JsonReader jsonReader = new JsonReader(streamError);
+
+                jsonReader.beginObject(); // Start processing the JSON object
+                while (jsonReader.hasNext()) { // Loop through all keys
+                    String key = jsonReader.nextName(); // Fetch the next key
+                    if (key.equals("Message")) { // Check if desired key
+                        // Fetch the value as a String
+                        strRes = jsonReader.nextString();
+
+                        break; // Break out of the loop
+                    } else {
+                        jsonReader.skipValue(); // Skip values of other keys
+                    }
+                }
+
+                jsonReader.close();
+
+//                strRes = stringBuilder.toString();
+
+                Log.d("ERROR",strResponse);
+            }
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return strRes;
+    }
+
+    public String GetResponse(final String strUrl) throws ExecutionException, InterruptedException {
+        String strRes = "";
+
+        //Instantiate new instance of our class
+        HttpGetRequest getRequest = new HttpGetRequest();
+        //Perform the doInBackground method, passing in our url
+        strRes = getRequest.execute(strUrl).get();
+
+        return strRes;
+    }
+
+    private static String convertInputStreamToString(InputStream inputStream) throws IOException{
+        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
+        String line = "";
+        String result = "";
+        while((line = bufferedReader.readLine()) != null)
+            result += line;
+
+        inputStream.close();
+        return result;
+
+    }
+
+    // check network connection
+    public boolean isConnected(){
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(this.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected())
+            return true;
+        else
+            return false;
+    }
+
+    public void OnClickAPI(View view) throws ExecutionException, InterruptedException {
+
+        String strResult = "";
+        etResponse = (EditText) findViewById(R.id.etResponse);
+        tvIsConnected = (TextView) findViewById(R.id.tvIsConnected);
+
+        String strURL = "http://api.logistikgo.com/api/Usuarios/ValidarUsuario";
+//        String strURL = "http://10.0.2.2:63510/api/Usuarios/ValidarUsuario";
+////
+        strUsuario =  editUsuario.getText().toString();
+        strContrasena = editContrasena.getText().toString();
+//
+//        strUsuario = "dbarrientos@logistikgo";
+//        strContrasena = "LGK123456";
+
+        if(isConnected()){
+            tvIsConnected.setBackgroundColor(0xFF00CC00);
+            tvIsConnected.setText("You are conncted");
+            strResult = GetResponse(strURL);
+        }
+        etResponse.setText(strResult);
+        Toast.makeText(this, strResult, Toast.LENGTH_SHORT).show();
     }
 }
