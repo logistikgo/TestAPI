@@ -19,7 +19,6 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -36,36 +35,16 @@ public class MainActivity extends AppCompatActivity {
     String strUsuario;
     String strContrasena;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        String test = "";
 
         etResponse = (EditText) findViewById(R.id.etResponse);
         tvIsConnected = (TextView) findViewById(R.id.tvIsConnected);
         editUsuario = (EditText) findViewById(R.id.editUsuario);
         editContrasena = (EditText) findViewById(R.id.editContrasena);
 
-//        if(isConnected()){
-//            tvIsConnected.setBackgroundColor(0xFF00CC00);
-//            tvIsConnected.setText("You are conncted");
-//        }
-//        else{
-//            //tvIsConnected.setText("You are NOT conncted");
-//        }
-
-        // show response on the EditText etResponse
-//        try {
-//                String strURL = "http://api.logistikgo.com/api/Usuarios/ValidarUsuario";
-//                test = GetResponse(strURL);
-//                etResponse.setText(test);
-//            } catch (ExecutionException e) {
-//                e.printStackTrace();
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//        }
     }
 
     @Override
@@ -90,37 +69,15 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public class HttpGetRequest extends AsyncTask<String, Void, String> {
+    public String GetResponse(final String strUrl) throws ExecutionException, InterruptedException {
+        String strRes = "";
 
-        public static final String REQUEST_METHOD = "POST";
-        public static final int READ_TIMEOUT = 150000;
-        public static final int CONNECTION_TIMEOUT = 150000;
+        //Instantiate new instance of our class
+        HttpGetRequest getRequest = new HttpGetRequest();
+        //Perform the doInBackground method, passing in our url
+        strRes = getRequest.execute(strUrl).get();
 
-        @Override
-        protected void onPreExecute() {
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            String stringUrl = strings[0];
-            String result = null;
-            String inputLine;
-
-            try {
-
-                result = GetHttpResponse(stringUrl,REQUEST_METHOD,READ_TIMEOUT,CONNECTION_TIMEOUT);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            return result;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-        }
+        return strRes;
     }
 
     public  String GetHttpResponse(String strURL, String strRequest_method, int read_timeout, int connection_timeout)  {
@@ -141,8 +98,11 @@ public class MainActivity extends AppCompatActivity {
             connection.setReadTimeout(read_timeout);
             connection.setConnectTimeout(connection_timeout);
 
+            //POST
             connection.setDoOutput(true);
             connection.setDoInput(true);
+
+            //ENCABEZADOS DE LA PETICIÓN
             //connection.setRequestProperty("User-Agent", "Fiddler");
             //connection.setRequestProperty("Host", "localhost:63510");
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
@@ -156,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
 
             int HttpResult = connection.getResponseCode();
 
+            //VERIFICAR SI LA CONEXION SE REALIZO DE FORMA CORRECTA = 200
             if(HttpResult == HttpURLConnection.HTTP_OK){
                 InputStreamReader streamReader = new InputStreamReader(connection.getInputStream());
                 //Create a new buffered reader and String Builder
@@ -173,13 +134,10 @@ public class MainActivity extends AppCompatActivity {
             }
             else{
                 String strResponse = connection.getResponseMessage();
-
                 InputStreamReader streamError = new InputStreamReader(connection.getErrorStream());
-
                 JsonReader jsonReader = new JsonReader(streamError);
 
 //                BufferedReader reader = new BufferedReader(streamError);
-
                 StringBuilder stringBuilder = new StringBuilder();
 
 //                while((inputLine = reader.readLine()) != null){
@@ -188,13 +146,12 @@ public class MainActivity extends AppCompatActivity {
 
 //                JsonReader jsonReader = new JsonReader(streamError);
 
+                //LEER JSON
                 jsonReader.beginObject(); // Start processing the JSON object
                 while (jsonReader.hasNext()) { // Loop through all keys
                     String key = jsonReader.nextName(); // Fetch the next key
-                    if (key.equals("Message")) { // Check if desired key
-                        // Fetch the value as a String
+                    if (key.equals("Message")) { // VERIFICA EL NOMBRE DEL CAMPO
                         strRes = jsonReader.nextString();
-
                         break; // Break out of the loop
                     } else {
                         jsonReader.skipValue(); // Skip values of other keys
@@ -219,60 +176,75 @@ public class MainActivity extends AppCompatActivity {
         return strRes;
     }
 
-    public String GetResponse(final String strUrl) throws ExecutionException, InterruptedException {
-        String strRes = "";
-
-        //Instantiate new instance of our class
-        HttpGetRequest getRequest = new HttpGetRequest();
-        //Perform the doInBackground method, passing in our url
-        strRes = getRequest.execute(strUrl).get();
-
-        return strRes;
-    }
-
-    private static String convertInputStreamToString(InputStream inputStream) throws IOException{
-        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
-        String line = "";
-        String result = "";
-        while((line = bufferedReader.readLine()) != null)
-            result += line;
-
-        inputStream.close();
-        return result;
-
-    }
-
-    // check network connection
+    // VERIFICAR SI EXISTE CONEXIÓN A INTERNET
     public boolean isConnected(){
         ConnectivityManager connMgr = (ConnectivityManager) getSystemService(this.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected())
-            return true;
-        else
-            return false;
-    }
+
+        return (networkInfo != null && networkInfo.isConnected());
+     }
 
     public void OnClickAPI(View view) throws ExecutionException, InterruptedException {
 
         String strResult = "";
-        etResponse = (EditText) findViewById(R.id.etResponse);
-        tvIsConnected = (TextView) findViewById(R.id.tvIsConnected);
 
+        //API PRODUCCION
         String strURL = "http://api.logistikgo.com/api/Usuarios/ValidarUsuario";
+        //API DEBUG VISUAL STUDIO
 //        String strURL = "http://10.0.2.2:63510/api/Usuarios/ValidarUsuario";
-////
         strUsuario =  editUsuario.getText().toString();
         strContrasena = editContrasena.getText().toString();
-//
+        //DATOS DE USUARIO HARDCOREADOS
 //        strUsuario = "dbarrientos@logistikgo";
 //        strContrasena = "LGK123456";
 
+        //VERIFICA SI HAY CONEXIÓN DE INTERNET
         if(isConnected()){
             tvIsConnected.setBackgroundColor(0xFF00CC00);
-            tvIsConnected.setText("You are conncted");
+            tvIsConnected.setText("You are connected");
+
+            //REALIZA LA PETICION
             strResult = GetResponse(strURL);
         }
+
+        //ESTABLECER EL RESULTADO EN EL EDIT
         etResponse.setText(strResult);
+
         Toast.makeText(this, strResult, Toast.LENGTH_SHORT).show();
+    }
+
+    //CLASS ASYNC REQUEST
+    public class HttpGetRequest extends AsyncTask<String, Void, String> {
+
+        //VARIABLES DE CONFIGURACION DE LA CONEXION
+        public static final String REQUEST_METHOD = "POST";
+        public static final int READ_TIMEOUT = 150000;
+        public static final int CONNECTION_TIMEOUT = 150000;
+
+        @Override
+        protected void onPreExecute() {
+        }
+
+
+        @Override
+        protected String doInBackground(String... strings) {
+            String stringUrl = strings[0];
+            String result = null;
+            String inputLine;
+
+            try {
+                result = GetHttpResponse(stringUrl,REQUEST_METHOD,READ_TIMEOUT,CONNECTION_TIMEOUT);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+        }
     }
 }

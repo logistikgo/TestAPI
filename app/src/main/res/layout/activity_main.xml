@@ -22,18 +22,22 @@
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:layout_marginTop="30dp"
-        android:ems="10"
-        android:hint="Reponse"
-        android:singleLine="true"></EditText>
-
+        android:hint="Reponse"></EditText>
 
     <EditText
         android:id="@+id/editUsuario"
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:layout_marginTop="100dp"
-        android:ems="10"
         android:hint="Usuario" />
+
+    <EditText
+        android:id="@+id/editContrasena"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="150dp"
+        android:hint="Contraseña"
+        android:textColor="#FF0000" />
 
     <Button
         android:id="@+id/button2"
@@ -48,14 +52,6 @@
         android:textAlignment="center"
         android:textSize="14sp"
         android:textStyle="bold" />
-
-    <EditText
-        android:id="@+id/editContrasena"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_marginTop="150dp"
-        android:hint="Contraseña"
-        android:textColor="#FF0000" />
 
 
 </android.support.design.widget.CoordinatorLayout>
