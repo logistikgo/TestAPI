@@ -20,9 +20,10 @@
     <EditText
         android:id="@+id/etResponse"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="30dp"
-        android:hint="Reponse"></EditText>
+        android:hint="Reponse"
+        android:lines="4"></EditText>
 
     <EditText
         android:id="@+id/editUsuario"
@@ -53,5 +54,26 @@
         android:textSize="14sp"
         android:textStyle="bold" />
 
+    <EditText
+        android:id="@+id/editViaje"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="260dp"
+        android:hint="ID"
+        android:textColor="#FF0000" />
+
+    <Button
+        android:id="@+id/btnGetDatosViaje"
+        style="@android:style/Widget.Material.Light.Button.Inset"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="300dp"
+        android:background="@android:color/holo_green_dark"
+        android:elevation="2dp"
+        android:onClick="OnClickViaje"
+        android:text="GE DATOS VIAJE"
+        android:textAlignment="center"
+        android:textSize="14sp"
+        android:textStyle="bold" />
 
 </android.support.design.widget.CoordinatorLayout>

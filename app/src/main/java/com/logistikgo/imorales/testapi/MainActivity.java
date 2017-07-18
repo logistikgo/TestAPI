@@ -17,7 +17,6 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -32,8 +31,10 @@ public class MainActivity extends AppCompatActivity {
     TextView tvIsConnected;
     EditText editUsuario;
     EditText editContrasena;
+    EditText editViaje;
     String strUsuario;
     String strContrasena;
+    String strIDViaje;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         tvIsConnected = (TextView) findViewById(R.id.tvIsConnected);
         editUsuario = (EditText) findViewById(R.id.editUsuario);
         editContrasena = (EditText) findViewById(R.id.editContrasena);
-
+        editViaje = (EditText) findViewById(R.id.editViaje);
     }
 
     @Override
@@ -69,28 +70,108 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public String GetResponse(final String strUrl) throws ExecutionException, InterruptedException {
-        String strRes = "";
+
+    public void OnClickAPI(View view) throws ExecutionException, InterruptedException, JSONException {
+
+        String strResult = "";
+
+        //API PRODUCCION
+        String strURL = "http://api.logistikgo.com/api/Usuarios/ValidarUsuario";
+        //API DEBUG VISUAL STUDIO
+//        String strURL = "http://10.0.2.2:63510/api/Usuarios/ValidarUsuario";
+        strUsuario =  editUsuario.getText().toString();
+        strContrasena = editContrasena.getText().toString();
+        //DATOS DE USUARIO HARDCOREADOS
+//        strUsuario = "dbarrientos@logistikgo";
+//        strContrasena = "LGK123456";
+
+
+        JSONObject jdata=new JSONObject();
+        JSONObject jParams=new JSONObject();
+
+        try {
+            jdata.put("strURL",strURL);
+
+            jParams.put("strUsuario",strUsuario);
+            jParams.put("strContrasena",strContrasena);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        //VERIFICA SI HAY CONEXIÓN DE INTERNET
+        if(isConnected()){
+            tvIsConnected.setBackgroundColor(0xFF00CC00);
+            tvIsConnected.setText("You are connected");
+
+            //REALIZA LA PETICION
+//            strResult = GetResponse(jdata,jParams);
+        }
+
+        //ESTABLECER EL RESULTADO EN EL EDIT
+        etResponse.setText(strResult);
+
+        Toast.makeText(this, strResult, Toast.LENGTH_SHORT).show();
+    }
+
+    public void OnClickViaje(View view) throws ExecutionException, InterruptedException, JSONException {
+
+        JSONObject resJson = null;
+
+        //API PRODUCCION
+        String strURL = "http://api.logistikgo.com/api/Viaje/GetDatosViaje";
+        //API DEBUG VISUAL STUDIO
+        strIDViaje =  editViaje.getText().toString();
+
+        //VERIFICA SI HAY CONEXIÓN DE INTERNET
+        if(isConnected()){
+            tvIsConnected.setBackgroundColor(0xFF00CC00);
+            tvIsConnected.setText("You are connected");
+
+            //REALIZA LA PETICION
+            try {
+
+                JSONObject jdata=new JSONObject();
+                jdata.put("strURL",strURL);
+
+                JSONObject jParams=new JSONObject();
+                jParams.put("strIDViaje",editViaje.getText().toString());
+
+                resJson = GetResponse(jdata,jParams);
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //ESTABLECER EL RESULTADO EN EL EDIT
+        etResponse.setText(resJson.getString("Nombre"));
+
+//        Toast.makeText(this, strResult, Toast.LENGTH_SHORT).show();
+    }
+
+    public JSONObject GetResponse(JSONObject jdata,JSONObject jParams) throws ExecutionException, InterruptedException, JSONException {
+        JSONObject resJson = null;
 
         //Instantiate new instance of our class
         HttpGetRequest getRequest = new HttpGetRequest();
-        //Perform the doInBackground method, passing in our url
-        strRes = getRequest.execute(strUrl).get();
 
-        return strRes;
+        resJson = getRequest.execute(jdata,jParams).get();
+
+        return resJson;
     }
 
-    public  String GetHttpResponse(String strURL, String strRequest_method, int read_timeout, int connection_timeout)  {
+    public  JSONObject GetHttpResponse(String strURL, JSONObject jData,String strRequest_method, int read_timeout, int connection_timeout)  {
         String strRes = null;
         String inputLine;
+        JSONObject jRes = null;
+        JSONObject _jMeta = null;
+        JSONObject _jData = null;
+        JSONObject _jError = null;
 
         try {
             URL urlCurrent = new URL(strURL);
             HttpURLConnection connection =(HttpURLConnection)urlCurrent.openConnection();
-
-            JSONObject jdata=new JSONObject();
-            jdata.put("strUsuario",strUsuario);
-            jdata.put("strContrasena", strContrasena);
 
             //Create a URL object holding our url
             //Create a connection
@@ -111,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
             connection.connect();
 
             OutputStream os = connection.getOutputStream();
-            os.write(jdata.toString().getBytes("UTF-8"));
+            os.write(jData.toString().getBytes("UTF-8"));
             os.close();
 
             int HttpResult = connection.getResponseCode();
@@ -119,32 +200,68 @@ public class MainActivity extends AppCompatActivity {
             //VERIFICAR SI LA CONEXION SE REALIZO DE FORMA CORRECTA = 200
             if(HttpResult == HttpURLConnection.HTTP_OK){
                 InputStreamReader streamReader = new InputStreamReader(connection.getInputStream());
-                //Create a new buffered reader and String Builder
-                BufferedReader reader = new BufferedReader(streamReader);
+
                 StringBuilder stringBuilder = new StringBuilder();
-                //Check if the line we are reading is not null
-                while((inputLine = reader.readLine()) != null){
-                    stringBuilder.append(inputLine);
+                String strResponseMessage = connection.getResponseMessage();
+                JsonReader jsonReader = new JsonReader(streamReader);
+
+                //LEER JSON
+                jsonReader.beginObject(); // Start processing the JSON object
+                while (jsonReader.hasNext()) { // Loop through all keys
+                    String strName = jsonReader.nextName(); // Fetch the next key
+                    String strValue = jsonReader.nextString();
+
+                    if (strName.equals("jMeta")) { // VERIFICA EL NOMBRE DEL CAMPO
+                        _jMeta = new JSONObject();
+                        _jMeta.put(strName, new JSONObject(strValue));
+//                        stringBuilder.append(strValue);
+                    }
+                    else if(strName.equals("jData")){
+                        _jData = new JSONObject();
+                        _jData.put(strName,strValue);
+                    }
+                    else if(strName.equals("jDataError")){
+                        _jError = new JSONObject();
+                        _jError.put(strName,strValue);
+                    }
+                    else {
+                        jsonReader.skipValue(); // Skip values of other keys
+                    }
                 }
-                //Close our InputStream and Buffered reader
-                reader.close();
-                streamReader.close();
-                //Set our result equal to our stringBuilder
-                strRes = stringBuilder.toString();
+                jsonReader.close();
+
+//                JSONObject _metaData = new JSONObject(_jMeta.getString("jMeta"));
+//                _metaData.getString("Response");
+
+                String strResponse = _jMeta.getString("Response");
+
+                if(strResponse == "OK"){
+                    jRes = _jData;
+                }
+                else{
+                    throw new IOException(_jMeta.getString("Message"));
+                }
+
+
+//                strRes = stringBuilder.toString();
+
+                //Create a new buffered reader and String Builder
+//                BufferedReader reader = new BufferedReader(streamReader);
+//                StringBuilder stringBuilder = new StringBuilder();
+//                //Check if the line we are reading is not null
+//                while((inputLine = reader.readLine()) != null){
+//                    stringBuilder.append(inputLine);
+//                }
+//                //Close our InputStream and Buffered reader
+//                reader.close();
+//                streamReader.close();
+//                //Set our result equal to our stringBuilder
+//                strRes = stringBuilder.toString();
             }
             else{
                 String strResponse = connection.getResponseMessage();
                 InputStreamReader streamError = new InputStreamReader(connection.getErrorStream());
                 JsonReader jsonReader = new JsonReader(streamError);
-
-//                BufferedReader reader = new BufferedReader(streamError);
-                StringBuilder stringBuilder = new StringBuilder();
-
-//                while((inputLine = reader.readLine()) != null){
-//                    stringBuilder.append(inputLine);
-//                }
-
-//                JsonReader jsonReader = new JsonReader(streamError);
 
                 //LEER JSON
                 jsonReader.beginObject(); // Start processing the JSON object
@@ -157,12 +274,17 @@ public class MainActivity extends AppCompatActivity {
                         jsonReader.skipValue(); // Skip values of other keys
                     }
                 }
-
                 jsonReader.close();
 
-//                strRes = stringBuilder.toString();
-
                 Log.d("ERROR",strResponse);
+
+//                StringBuilder stringBuilder = new StringBuilder();
+//               BufferedReader reader = new BufferedReader(streamError);
+//                while((inputLine = reader.readLine()) != null){
+//                    stringBuilder.append(inputLine);
+//                }
+//                JsonReader jsonReader = new JsonReader(streamError);
+
             }
 
         } catch (MalformedURLException e) {
@@ -173,7 +295,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        return strRes;
+        return jRes;
     }
 
     // VERIFICAR SI EXISTE CONEXIÓN A INTERNET
@@ -182,39 +304,11 @@ public class MainActivity extends AppCompatActivity {
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 
         return (networkInfo != null && networkInfo.isConnected());
-     }
-
-    public void OnClickAPI(View view) throws ExecutionException, InterruptedException {
-
-        String strResult = "";
-
-        //API PRODUCCION
-        String strURL = "http://api.logistikgo.com/api/Usuarios/ValidarUsuario";
-        //API DEBUG VISUAL STUDIO
-//        String strURL = "http://10.0.2.2:63510/api/Usuarios/ValidarUsuario";
-        strUsuario =  editUsuario.getText().toString();
-        strContrasena = editContrasena.getText().toString();
-        //DATOS DE USUARIO HARDCOREADOS
-//        strUsuario = "dbarrientos@logistikgo";
-//        strContrasena = "LGK123456";
-
-        //VERIFICA SI HAY CONEXIÓN DE INTERNET
-        if(isConnected()){
-            tvIsConnected.setBackgroundColor(0xFF00CC00);
-            tvIsConnected.setText("You are connected");
-
-            //REALIZA LA PETICION
-            strResult = GetResponse(strURL);
-        }
-
-        //ESTABLECER EL RESULTADO EN EL EDIT
-        etResponse.setText(strResult);
-
-        Toast.makeText(this, strResult, Toast.LENGTH_SHORT).show();
     }
 
+
     //CLASS ASYNC REQUEST
-    public class HttpGetRequest extends AsyncTask<String, Void, String> {
+    public class HttpGetRequest extends AsyncTask<JSONObject, Void, JSONObject> {
 
         //VARIABLES DE CONFIGURACION DE LA CONEXION
         public static final String REQUEST_METHOD = "POST";
@@ -227,24 +321,34 @@ public class MainActivity extends AppCompatActivity {
 
 
         @Override
-        protected String doInBackground(String... strings) {
-            String stringUrl = strings[0];
+        protected JSONObject doInBackground(JSONObject... jObject) {
+            String stringUrl = null;
+            JSONObject resJson = null;
+
+            try {
+                stringUrl = jObject[0].getString("strURL");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
             String result = null;
             String inputLine;
 
             try {
-                result = GetHttpResponse(stringUrl,REQUEST_METHOD,READ_TIMEOUT,CONNECTION_TIMEOUT);
+
+                resJson = GetHttpResponse(stringUrl,jObject[1],REQUEST_METHOD,READ_TIMEOUT,CONNECTION_TIMEOUT);
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            return result;
+            return resJson;
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(JSONObject s) {
             super.onPostExecute(s);
         }
+
     }
 }
