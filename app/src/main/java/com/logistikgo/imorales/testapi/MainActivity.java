@@ -25,6 +25,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 
+//ESTA CLASE ES LA MAIN ACTIVITY
 public class MainActivity extends AppCompatActivity {
 
     EditText etResponse;
