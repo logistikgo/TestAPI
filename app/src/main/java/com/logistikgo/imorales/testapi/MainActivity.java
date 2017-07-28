@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
             tvIsConnected.setText("You are connected");
 
             //REALIZA LA PETICION
-//            strResult = GetResponse(jdata,jParams);
+            strResult = GetResponse(jdata,jParams);
         }
 
         //ESTABLECER EL RESULTADO EN EL EDIT
@@ -121,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
 
         //API PRODUCCION
         String strURL = "http://api.logistikgo.com/api/Viaje/GetDatosViaje";
+
         //API DEBUG VISUAL STUDIO
         strIDViaje =  editViaje.getText().toString();
 
