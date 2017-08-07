@@ -17,11 +17,14 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 
@@ -29,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 //wiririr
 public class MainActivity extends AppCompatActivity {
     //wiri wiri
+    //ese mi jorsh
     EditText etResponse;
     TextView tvIsConnected;
     EditText editUsuario;
@@ -75,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void OnClickAPI(View view) throws ExecutionException, InterruptedException, JSONException {
 
-        String strResult = "";
+        JSONObject JResult =new JSONObject();
 
         //API PRODUCCION
         String strURL = "http://api.logistikgo.com/api/Usuarios/ValidarUsuario";
@@ -106,13 +110,13 @@ public class MainActivity extends AppCompatActivity {
             tvIsConnected.setText("You are connected");
 
             //REALIZA LA PETICION
-            strResult = GetResponse(jdata,jParams);
+            JResult = GetResponse(jdata,jParams);
         }
 
         //ESTABLECER EL RESULTADO EN EL EDIT
-        etResponse.setText(strResult);
+       // etResponse.setText(JResult);
 
-        Toast.makeText(this, strResult, Toast.LENGTH_SHORT).show();
+       // Toast.makeText(this, JResult, Toast.LENGTH_SHORT).show();
     }
 
     public void OnClickViaje(View view) throws ExecutionException, InterruptedException, JSONException {
@@ -209,10 +213,25 @@ public class MainActivity extends AppCompatActivity {
                 JsonReader jsonReader = new JsonReader(streamReader);
 
                 //LEER JSON
-                jsonReader.beginObject(); // Start processing the JSON object
-                while (jsonReader.hasNext()) { // Loop through all keys
-                    String strName = jsonReader.nextName(); // Fetch the next key
-                    String strValue = jsonReader.nextString();
+//                jsonReader.beginObject(); // Start processing the JSON object
+//                while (jsonReader.hasNext()) { // Loop through all keys
+//                    String strName = jsonReader.nextName(); // Fetch the next key
+//                    String strValue = jsonReader.();
+
+                BufferedReader reader = new BufferedReader(streamReader);
+                StringBuilder stringBuilder1 = new StringBuilder();
+                //Check if the line we are reading is not null
+                while((inputLine = reader.readLine()) != null){
+                    stringBuilder1.append(inputLine);
+                }
+                //Close our InputStream and Buffered reader
+                reader.close();
+                streamReader.close();
+                //Set our result equal to our stringBuilder
+                strRes = stringBuilder1.toString();
+
+                String strName = "200"; // Fetch the next key
+                String strValue = "jMeta";
 
                     if (strName.equals("jMeta")) { // VERIFICA EL NOMBRE DEL CAMPO
                         _jMeta = new JSONObject();
@@ -260,7 +279,17 @@ public class MainActivity extends AppCompatActivity {
 //                streamReader.close();
 //                //Set our result equal to our stringBuilder
 //                strRes = stringBuilder.toString();
-            }
+            } catch (ProtocolException e1) {
+            e1.printStackTrace();
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        } catch (JSONException e1) {
+            e1.printStackTrace();
+        } catch (MalformedURLException e1) {
+            e1.printStackTrace();
+        } catch (UnsupportedEncodingException e1) {
+            e1.printStackTrace();
+        }
             else{
                 String strResponse = connection.getResponseMessage();
                 InputStreamReader streamError = new InputStreamReader(connection.getErrorStream());
