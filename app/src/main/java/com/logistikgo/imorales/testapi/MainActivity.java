@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutionException;
 //ESTA CLASE ES LA MAIN ACTIVITY
 //wiririr
 public class MainActivity extends AppCompatActivity {
-
+    //wiri wiri
     EditText etResponse;
     TextView tvIsConnected;
     EditText editUsuario;
